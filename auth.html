@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication — Lumen's data tech</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:#1a1a2e; --accent:#e94560; --accent2:#0f3460; --gold:#f5a623;
+      --surface:#16213e; --surface2:#0f3460; --text:#eaeaea; --text-muted:#8892a4;
+      --border:rgba(255,255,255,0.08); --success:#2ecc71; --danger:#e74c3c;
+      --card-bg:rgba(22,33,62,0.96); --radius:14px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      font-family:'DM Sans',sans-serif;
+      background:var(--primary);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      background-image:
+        radial-gradient(ellipse at 15% 60%,rgba(233,69,96,.10) 0%,transparent 55%),
+        radial-gradient(ellipse at 85% 20%,rgba(15,52,96,.35) 0%,transparent 50%);
+    }
+    h1,h2,h3,h4,h5{font-family:'Syne',sans-serif;}
+
+    .navbar{background:rgba(10,10,20,.96)!important;backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 0;}
+    .navbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:var(--accent)!important;letter-spacing:-.5px;text-decoration:none;}
+    .navbar-brand span{color:var(--text);}
+
+    .auth-wrapper{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px 60px;}
+
+    .auth-card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:0 24px 64px rgba(0,0,0,.55);
+      backdrop-filter:blur(16px);
+      width:100%;
+      max-width:490px;
+      overflow:hidden;
+      animation:cardIn .4s cubic-bezier(.22,.61,.36,1) both;
+    }
+    @keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(.97);}to{opacity:1;transform:none;}}
+
+    .auth-tabs{display:flex;background:rgba(10,10,20,.7);border-bottom:1px solid var(--border);}
+    .auth-tab{
+      flex:1;padding:15px 6px;
+      font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.3px;
+      color:var(--text-muted);cursor:pointer;border:none;background:transparent;
+      border-bottom:3px solid transparent;transition:all .22s;
+    }
+    .auth-tab:hover{color:var(--text);}
+    .auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+    .auth-panel{padding:32px 36px 36px;display:none;animation:panelIn .3s ease both;}
+    .auth-panel.active{display:block;}
+    @keyframes panelIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
+    @media(max-width:520px){.auth-panel{padding:24px 18px 28px;}}
+
+    .p-icon{
+      width:56px;height:56px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent2),var(--accent));
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;color:#fff;margin:0 auto 16px;
+      box-shadow:0 6px 22px rgba(233,69,96,.35);
+    }
+    .p-title{text-align:center;font-size:1.22rem;font-weight:700;margin-bottom:4px;}
+    .p-sub{text-align:center;font-size:.82rem;color:var(--text-muted);margin-bottom:26px;}
+
+    .field-group{margin-bottom:14px;}
+    .f-label{
+      display:flex;align-items:center;gap:5px;
+      color:var(--text-muted);font-size:.82rem;font-weight:500;margin-bottom:6px;
+    }
+    .f-label .req{color:var(--accent);}
+
+    .input-wrap{position:relative;}
+    .input-wrap .fi{
+      position:absolute;left:13px;top:50%;transform:translateY(-50%);
+      color:var(--text-muted);font-size:.88rem;pointer-events:none;transition:color .2s;z-index:1;
+    }
+    .input-wrap input{
+      width:100%;
+      background:var(--surface)!important;
+      border:1.5px solid var(--border)!important;
+      color:var(--text)!important;
+      border-radius:9px;
+      padding:11px 42px 11px 38px;
+      font-size:.91rem;
+      font-family:'DM Sans',sans-serif;
+      transition:border-color .2s,box-shadow .2s;
+      outline:none;
+      -webkit-appearance:none;
+    }
+    .input-wrap input:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(233,69,96,.13)!important;}
+    .input-wrap input:focus+.fi,.input-wrap input:focus~.fi{color:var(--accent);}
+    .input-wrap input.is-invalid{border-color:var(--danger)!important;}
+    .input-wrap input.is-valid{border-color:var(--success)!important;}
+    .input-wrap input::placeholder{color:var(--text-muted);}
+
+    .eye-btn{
+      position:absolute;right:11px;top:50%;transform:translateY(-50%);
+      background:none;border:none;color:var(--text-muted);cursor:pointer;
+      font-size:.85rem;padding:4px 6px;transition:color .2s;z-index:2;
+    }
+    .eye-btn:hover{color:var(--accent);}
+
+    .f-msg{font-size:.75rem;margin-top:5px;min-height:15px;display:block;transition:all .2s;}
+    .f-msg.err{color:var(--danger);}
+    .f-msg.ok{color:var(--success);}
+    .f-msg.info{color:var(--text-muted);}
+
+    .str-bar{height:4px;border-radius:2px;background:var(--border);margin-top:7px;overflow:hidden;}
+    .str-fill{height:100%;border-radius:2px;transition:width .35s,background .35s;width:0;}
+    .str-lbl{font-size:.73rem;color:var(--text-muted);margin-top:3px;}
+
+    .btn-auth{
+      width:100%;padding:12px;border-radius:9px;border:none;
+      font-family:'Syne',sans-serif;font-weight:700;font-size:.94rem;letter-spacing:.3px;
+      cursor:pointer;transition:all .22s;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      margin-top:6px;
+    }
+    .btn-main{
+      background:linear-gradient(135deg,#e94560,#c73550);
+      color:#fff;box-shadow:0 4px 18px rgba(233,69,96,.3);
+    }
+    .btn-main:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(233,69,96,.45);}
+    .btn-main:active{transform:none;}
+    .btn-main:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+    .spin{
+      width:16px;height:16px;
+      border:2px solid rgba(255,255,255,.35);
+      border-top-color:#fff;
+      border-radius:50%;
+      animation:spin .7s linear infinite;
+      display:none;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading .spin{display:block;}
+    .loading .btn-txt{display:none;}
+
+    .divider{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:var(--text-muted);font-size:.76rem;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    .switch-row{text-align:center;margin-top:16px;font-size:.83rem;color:var(--text-muted);}
+    .switch-row button,.switch-row a{
+      color:var(--accent);background:none;border:none;cursor:pointer;
+      font-weight:600;text-decoration:underline;font-size:inherit;padding:0;
+      transition:color .2s;
+    }
+    .switch-row button:hover{color:#c73550;}
+
+    .reset-info{
+      background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.22);
+      border-radius:9px;padding:12px 15px;
+      font-size:.81rem;color:var(--gold);
+      margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;
+    }
+    .reset-info i{margin-top:2px;flex-shrink:0;}
+
+    .toast-wrap{position:fixed;top:74px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:10px;}
+    .t-item{
+      min-width:270px;max-width:360px;
+      padding:13px 17px;border-radius:10px;font-size:.87rem;
+      display:flex;align-items:center;gap:10px;
+      box-shadow:0 8px 28px rgba(0,0,0,.45);
+      animation:toastIn .3s ease both;
+    }
+    @keyframes toastIn{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:none;}}
+    .t-item.success{background:#1a4030;border-left:4px solid var(--success);color:#a8f0c8;}
+    .t-item.error{background:#3d1a22;border-left:4px solid var(--danger);color:#f0a8b0;}
+    .t-item.info{background:#1e2d44;border-left:4px solid var(--gold);color:#f5d49e;}
+
+    footer{background:rgba(10,10,20,.96);border-top:1px solid var(--border);color:var(--text-muted);padding:18px 0;text-align:center;font-size:.82rem;}
+
+    .pw-rules{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 14px;}
+    .pw-rule{font-size:.73rem;color:var(--text-muted);display:flex;align-items:center;gap:5px;transition:color .2s;}
+    .pw-rule.pass{color:var(--success);}
+    .pw-rule i{font-size:.7rem;}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a class="navbar-brand" href="#"><i class="fas fa-address-book me-2"></i>Lumen's <span>data tech</span></a>
+  </div>
+</nav>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">
+        <i class="fas fa-sign-in-alt me-1"></i>Sign In
+      </button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">
+        <i class="fas fa-user-plus me-1"></i>Sign Up
+      </button>
+      <button class="auth-tab" id="tab-reset" onclick="switchTab('reset')">
+        <i class="fas fa-key me-1"></i>Reset
+      </button>
+    </div>
+
+    <!-- SIGN IN -->
+    <div class="auth-panel active" id="panel-signin">
+      <div class="p-icon"><i class="fas fa-lock-open"></i></div>
+      <div class="p-title">Welcome Back</div>
+      <div class="p-sub">Sign in to access your account</div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-user fa-xs"></i> User ID <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-user"></i>
+          <input type="text" id="si-uid" placeholder="Mobile number or email address" autocomplete="username">
+        </div>
+        <span class="f-msg" id="si-uid-msg"></span>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-lock fa-xs"></i> Password <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-lock"></i>
+          <input type="password" id="si-pw" placeholder="Enter your password" autocomplete="current-password">
+          <button class="eye-btn" type="button" onclick="toggleEye('si-pw',this)"><i class="fas fa-eye"></i></button>
+        </div>
+        <span class="f-msg" id="si-pw-msg"></span>
+      </div>
+
+      <button class="btn-auth btn-main" id="btn-si" onclick="doSignIn()">
+        <span class="btn-txt"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+        <div class="spin"></div>
+      </button>
+
+      <div class="switch-row" style="margin-top:14px;">
+        <button onclick="switchTab('reset')">Forget Password?</button>
+      </div>
+      <div class="switch-row">
+        Don't have an account? <button onclick="switchTab('signup')">Sign Up</button>
+      </div>
+    </div>
+
+    <!-- SIGN UP -->
+    <div class="auth-panel" id="panel-signup">
+      <div class="p-icon"><i class="fas fa-user-plus"></i></div>
+      <div class="p-title">Create Account</div>
+      <div class="p-sub">Fill in the details below to register</div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-id-badge fa-xs"></i> User Name <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-id-badge"></i>
+          <input type="text" id="su-name" placeholder="Choose a display name" oninput="clr('su-name-msg')">
+        </div>
+        <span class="f-msg" id="su-name-msg"></span>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-mobile-alt fa-xs"></i> Mobile Number <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-mobile-alt"></i>
+          <input type="tel" id="su-mob" placeholder="e.g. +8801XXXXXXXXX" oninput="clr('su-mob-msg')">
+        </div>
+        <span class="f-msg" id="su-mob-msg"></span>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-envelope fa-xs"></i> Email Address <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-envelope"></i>
+          <input type="email" id="su-email" placeholder="you@example.com" oninput="clr('su-email-msg')">
+        </div>
+        <span class="f-msg" id="su-email-msg"></span>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-lock fa-xs"></i> Password <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-lock"></i>
+          <input type="password" id="su-pw" placeholder="Min 8 chars, upper, lower, number"
+                 autocomplete="new-password" oninput="onPwInput()">
+          <button class="eye-btn" type="button" onclick="toggleEye('su-pw',this)"><i class="fas fa-eye"></i></button>
+        </div>
+        <span class="f-msg" id="su-pw-msg"></span>
+        <div class="str-bar"><div class="str-fill" id="str-fill"></div></div>
+        <div class="str-lbl" id="str-lbl"></div>
+        <div class="pw-rules" id="pw-rules">
+          <span class="pw-rule" id="rl-len"><i class="fas fa-circle"></i> 8+ chars</span>
+          <span class="pw-rule" id="rl-up"><i class="fas fa-circle"></i> Uppercase</span>
+          <span class="pw-rule" id="rl-lo"><i class="fas fa-circle"></i> Lowercase</span>
+          <span class="pw-rule" id="rl-num"><i class="fas fa-circle"></i> Number</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-lock fa-xs"></i> Confirm Password <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-lock"></i>
+          <input type="password" id="su-cf" placeholder="Re-enter your password"
+                 autocomplete="new-password" oninput="onCfInput()">
+          <button class="eye-btn" type="button" onclick="toggleEye('su-cf',this)"><i class="fas fa-eye"></i></button>
+        </div>
+        <span class="f-msg" id="su-cf-msg"></span>
+      </div>
+
+      <button class="btn-auth btn-main" id="btn-su" onclick="doSignUp()">
+        <span class="btn-txt"><i class="fas fa-user-plus"></i> Create Account</span>
+        <div class="spin"></div>
+      </button>
+
+      <div class="switch-row">
+        Already have an account? <button onclick="switchTab('signin')">Sign In</button>
+      </div>
+    </div>
+
+    <!-- RESET -->
+    <div class="auth-panel" id="panel-reset">
+      <div class="p-icon"><i class="fas fa-key"></i></div>
+      <div class="p-title">Reset Credential</div>
+      <div class="p-sub">Re-set your credential</div>
+
+      <div class="reset-info">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Enter your registered Mobile Number or Email. Your existing credentials will be permanently removed so you can register again.</span>
+      </div>
+
+      <div class="field-group">
+        <div class="f-label"><i class="fas fa-user fa-xs"></i> User ID <span class="req">*</span></div>
+        <div class="input-wrap">
+          <i class="fi fas fa-user"></i>
+          <input type="text" id="rs-uid" placeholder="Mobile number or email address" oninput="clr('rs-uid-msg')">
+        </div>
+        <span class="f-msg" id="rs-uid-msg"></span>
+      </div>
+
+      <button class="btn-auth btn-main" id="btn-rs" onclick="doReset()">
+        <span class="btn-txt"><i class="fas fa-trash-alt"></i> Re-set</span>
+        <div class="spin"></div>
+      </button>
+
+      <div class="switch-row">
+        Remembered it? <button onclick="switchTab('signin')">Back to Sign In</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2024 Lumen's data tech — Contact Manager. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// SESSION GUARD — redirect if already logged in
+if (sessionStorage.getItem('lumen_auth') === '1') {
+  window.location.href = 'Index.html';
+}
+
+// STORAGE
+const SK = 'lumen_users_v1';
+function getUsers()      { try { return JSON.parse(localStorage.getItem(SK)) || []; } catch { return []; } }
+function saveUsers(u)    { localStorage.setItem(SK, JSON.stringify(u)); }
+
+// Lightweight hash for demo (NOT production-grade)
+function hash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(36) + '_' + s.length;
+}
+
+// Normalise mobile for comparison
+function normMob(v) { return String(v || '').replace(/[\s\-().+]/g,''); }
+// Registration helpers removed — redirects go directly to Index.html
+
+// TAB SWITCH
+function switchTab(t) {
+  ['signin','signup','reset'].forEach(id => {
+    document.getElementById('tab-'+id).classList.toggle('active', id===t);
+    document.getElementById('panel-'+id).classList.toggle('active', id===t);
+  });
+  clearAll();
+}
+
+// VALIDATION HELPERS
+function isEmail(v)  { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+function isMobile(v) {
+  const d = v.replace(/[\s\-().+]/g,'');
+  return /^\d{7,15}$/.test(d);
+}
+function pwRules(pw) {
+  return {
+    len: pw.length >= 8,
+    up:  /[A-Z]/.test(pw),
+    lo:  /[a-z]/.test(pw),
+    num: /[0-9]/.test(pw)
+  };
+}
+function isStrongPw(pw) { const r=pwRules(pw); return r.len&&r.up&&r.lo&&r.num; }
+
+// FIELD UI HELPERS
+function setMsg(id, txt, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = txt;
+  el.className = 'f-msg ' + (cls||'');
+}
+function setInvalid(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('is-invalid'); el.classList.remove('is-valid'); }
+}
+function setValid(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('is-valid'); el.classList.remove('is-invalid'); }
+}
+function clearAll() {
+  document.querySelectorAll('.f-msg').forEach(e => { e.textContent=''; e.className='f-msg'; });
+  document.querySelectorAll('.input-wrap input').forEach(e => e.classList.remove('is-invalid','is-valid'));
+}
+function clr(id) { setMsg(id,'',''); }
+
+function setLoad(btnId, on) {
+  const b = document.getElementById(btnId);
+  b.classList.toggle('loading', on);
+  b.disabled = on;
+}
+
+// EYE TOGGLE
+function toggleEye(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const ico = btn.querySelector('i');
+  if (inp.type==='password') { inp.type='text'; ico.className='fas fa-eye-slash'; }
+  else                       { inp.type='password'; ico.className='fas fa-eye';   }
+}
+
+// PASSWORD STRENGTH
+function onPwInput() {
+  const pw = document.getElementById('su-pw').value;
+  const r  = pwRules(pw);
+  ['len','up','lo','num'].forEach(k => {
+    const el = document.getElementById('rl-'+k);
+    el.classList.toggle('pass', r[k]);
+    el.querySelector('i').className = r[k] ? 'fas fa-check-circle' : 'fas fa-circle';
+  });
+  const score = [r.len,r.up,r.lo,r.num,/[^A-Za-z0-9]/.test(pw)].filter(Boolean).length;
+  const levels = [
+    {w:'0%',  bg:'transparent',txt:''},
+    {w:'20%', bg:'#e74c3c',    txt:'Very Weak'},
+    {w:'40%', bg:'#e67e22',    txt:'Weak'},
+    {w:'60%', bg:'#f1c40f',    txt:'Fair'},
+    {w:'80%', bg:'#2ecc71',    txt:'Strong'},
+    {w:'100%',bg:'#27ae60',    txt:'Very Strong'}
+  ];
+  const lv = levels[score]||levels[0];
+  const fill = document.getElementById('str-fill');
+  fill.style.width = lv.w; fill.style.background = lv.bg;
+  const lbl = document.getElementById('str-lbl');
+  lbl.textContent = lv.txt; lbl.style.color = lv.bg;
+
+  if (!pw) { setMsg('su-pw-msg','',''); return; }
+  if (!isStrongPw(pw)) { setMsg('su-pw-msg','Does not meet requirements','err'); setInvalid('su-pw'); }
+  else                  { setMsg('su-pw-msg','Password is strong','ok');         setValid('su-pw');   }
+  onCfInput();
+}
+
+function onCfInput() {
+  const pw = document.getElementById('su-pw').value;
+  const cf = document.getElementById('su-cf').value;
+  if (!cf) return;
+  if (pw !== cf) { setMsg('su-cf-msg','Password & Confirm password not match','err'); setInvalid('su-cf'); }
+  else           { setMsg('su-cf-msg','Passwords match','ok');                        setValid('su-cf');   }
+}
+
+// TOAST
+function toast(msg, type, ms) {
+  ms = ms || 4000;
+  const ic = {success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle'};
+  const el = document.createElement('div');
+  el.className = 't-item '+type;
+  el.innerHTML = `<i class="fas ${ic[type]||ic.info}"></i><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => {
+    el.style.cssText='opacity:0;transform:translateX(28px);transition:.3s';
+    setTimeout(()=>el.remove(),320);
+  }, ms);
+}
+
+// SIGN UP
+function doSignUp() {
+  const name  = document.getElementById('su-name').value.trim();
+  const mob   = document.getElementById('su-mob').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pw    = document.getElementById('su-pw').value;
+  const cf    = document.getElementById('su-cf').value;
+  let ok = true;
+
+  if (!name) { setMsg('su-name-msg','User name is required','err'); setInvalid('su-name'); ok=false; }
+  else        { setValid('su-name'); }
+
+  if (!mob)             { setMsg('su-mob-msg','Mobile number is required','err'); setInvalid('su-mob'); ok=false; }
+  else if (!isMobile(mob)) { setMsg('su-mob-msg','Invalid mobile number format','err'); setInvalid('su-mob'); ok=false; }
+  else                  { setValid('su-mob'); }
+
+  if (!email)           { setMsg('su-email-msg','Email address is required','err'); setInvalid('su-email'); ok=false; }
+  else if (!isEmail(email)) { setMsg('su-email-msg','Invalid email address format','err'); setInvalid('su-email'); ok=false; }
+  else                  { setValid('su-email'); }
+
+  if (!pw)               { setMsg('su-pw-msg','Password is required','err'); setInvalid('su-pw'); ok=false; }
+  else if (!isStrongPw(pw)) { setMsg('su-pw-msg','Does not meet requirements','err'); setInvalid('su-pw'); ok=false; }
+
+  if (!cf)               { setMsg('su-cf-msg','Please confirm your password','err'); setInvalid('su-cf'); ok=false; }
+  else if (pw !== cf)    { setMsg('su-cf-msg','Password & Confirm password not match','err'); setInvalid('su-cf'); ok=false; }
+
+  if (!ok) return;
+
+  const users = getUsers();
+  if (users.find(u => normMob(u.mobile)===normMob(mob) || u.email.toLowerCase()===email.toLowerCase())) {
+    toast('You are already registered','error');
+    setMsg('su-mob-msg','Mobile or email already registered','err'); setInvalid('su-mob');
+    setMsg('su-email-msg','Mobile or email already registered','err'); setInvalid('su-email');
+    return;
+  }
+
+  setLoad('btn-su', true);
+  setTimeout(() => {
+    const newUser = { 
+      username: name, 
+      mobile: mob, 
+      email, 
+      passwordHash: hash(pw), 
+      createdAt: new Date().toISOString() 
+    };
+    users.push(newUser);
+    saveUsers(users);
+    sessionStorage.setItem('lumen_auth','1');
+    sessionStorage.setItem('lumen_user', JSON.stringify({ 
+      username: newUser.username, 
+      email: newUser.email, 
+      mobile: newUser.mobile 
+    }));
+    setLoad('btn-su', false);
+    toast('Account created successfully! Please sign in.','success',2500);
+    setTimeout(() => {
+      switchTab('signin');
+    }, 1000);
+  }, 900);
+}
+
+// SIGN IN
+function doSignIn() {
+  const uid = document.getElementById('si-uid').value.trim();
+  const pw  = document.getElementById('si-pw').value;
+  let ok = true;
+
+  if (!uid) { setMsg('si-uid-msg','User ID is required','err'); setInvalid('si-uid'); ok=false; }
+  if (!pw)  { setMsg('si-pw-msg','Password is required','err'); setInvalid('si-pw');  ok=false; }
+  if (!ok) return;
+
+  setLoad('btn-si', true);
+  setTimeout(() => {
+    const users = getUsers();
+    const h = hash(pw);
+    const user = users.find(u =>
+      (normMob(u.mobile)===normMob(uid) || u.email.toLowerCase()===uid.toLowerCase()) &&
+      u.passwordHash === h
+    );
+    if (user) {
+      sessionStorage.setItem('lumen_auth','1');
+      sessionStorage.setItem('lumen_user', JSON.stringify({ 
+        username: user.username, 
+        email: user.email, 
+        mobile: user.mobile 
+      }));
+      
+      toast(`Welcome back, ${user.username}!`,'success',2500);
+      setTimeout(() => {
+        window.location.href = 'Index.html';
+      }, 1100);
+    } else {
+      setLoad('btn-si', false);
+      toast('ID and/or Password not match','error');
+      setMsg('si-uid-msg','Check your User ID','err');   setInvalid('si-uid');
+      setMsg('si-pw-msg','Check your password','err');   setInvalid('si-pw');
+    }
+  }, 850);
+}
+
+// RESET
+function doReset() {
+  const uid = document.getElementById('rs-uid').value.trim();
+  if (!uid) { setMsg('rs-uid-msg','User ID is required','err'); setInvalid('rs-uid'); return; }
+
+  setLoad('btn-rs', true);
+  setTimeout(() => {
+    const users = getUsers();
+    const idx = users.findIndex(u =>
+      normMob(u.mobile)===normMob(uid) || u.email.toLowerCase()===uid.toLowerCase()
+    );
+    if (idx === -1) {
+      setLoad('btn-rs', false);
+      toast('User ID not found','error');
+      setMsg('rs-uid-msg','No account found with this ID','err'); setInvalid('rs-uid');
+    } else {
+      try {
+        const sessionUser = JSON.parse(sessionStorage.getItem('lumen_user') || '{}');
+        const isCurrentUser = 
+          normMob(sessionUser.mobile) === normMob(users[idx].mobile) ||
+          String(sessionUser.email || '').toLowerCase() === String(users[idx].email || '').toLowerCase();
+        if (isCurrentUser) {
+          sessionStorage.removeItem('lumen_auth');
+          sessionStorage.removeItem('lumen_user');
+        }
+      } catch(e) {}
+      
+      users.splice(idx, 1);
+      saveUsers(users);
+      setLoad('btn-rs', false);
+      document.getElementById('rs-uid').value='';
+      toast('Credential removed — please create a new account','info',5000);
+      setTimeout(() => switchTab('signup'), 1300);
+    }
+  }, 900);
+}
+
+// ENTER KEY
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const p = document.querySelector('.auth-panel.active');
+  if (!p) return;
+  if (p.id==='panel-signin') doSignIn();
+  if (p.id==='panel-signup') doSignUp();
+  if (p.id==='panel-reset')  doReset();
+});
+</script>
+</body>
+</html>

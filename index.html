@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>if(sessionStorage.getItem("lumen_auth")!=="1"){window.location.replace("auth.html");}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Manager — Lumen's data tech</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a1a2e; --accent: #e94560; --accent2: #0f3460; --gold: #f5a623;
+            --surface: #16213e; --surface2: #0f3460; --text: #eaeaea; --text-muted: #8892a4;
+            --border: rgba(255,255,255,0.08); --success: #2ecc71; --danger: #e74c3c;
+            --card-bg: rgba(22,33,62,0.9); --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--primary); color: var(--text); min-height: 100vh;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(233,69,96,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(15,52,96,0.3) 0%, transparent 50%); }
+        h1,h2,h3,h4,h5,.navbar-brand { font-family: 'Syne', sans-serif; }
+        .navbar { background: rgba(10,10,20,0.95) !important; backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 14px 0; }
+        .navbar-brand { font-weight: 800; font-size: 1.3rem; color: var(--accent) !important; letter-spacing: -0.5px; }
+        .navbar-brand span { color: var(--text); }
+        .nav-link { color: var(--text-muted) !important; transition: color .2s; }
+        .nav-link:hover, .nav-link.freight-link:hover { color: var(--accent) !important; }
+        .freight-link { color: var(--gold) !important; font-weight: 600; }
+        @keyframes slideUp { from { opacity:0; transform: translateY(30px); } to { opacity:1; transform: translateY(0); } }
+        .form-control, .form-select { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 8px; padding: 10px 14px; font-size: .92rem; transition: border-color .2s; }
+        .form-control:focus, .form-select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(233,69,96,0.15) !important; outline: none; }
+        .form-control::placeholder { color: var(--text-muted); }
+        .form-label { color: var(--text-muted); font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
+        .form-text { color: var(--text-muted); font-size: .78rem; }
+        .btn { border-radius: 8px; font-weight: 500; font-family: 'Syne', sans-serif; transition: all .2s; }
+        .btn-primary { background: var(--accent); border: none; color: white; padding: 10px 22px; }
+        .btn-primary:hover { background: #c73550; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(233,69,96,0.4); }
+        .btn-success { background: var(--success); border: none; color: white; }
+        .btn-success:hover { background: #27ae60; transform: translateY(-1px); }
+        .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+        .btn-secondary:hover { background: var(--surface); color: var(--text); }
+        .btn-info { background: #0f6cbd; border: none; color: white; }
+        .btn-w-full { width: 100%; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 24px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .card-header { background: linear-gradient(135deg,var(--accent2),var(--accent)); color: white; border-radius: var(--radius) var(--radius) 0 0 !important; font-weight: 700; font-size: .95rem; padding: 14px 20px; border: none; }
+        .card-body { padding: 24px; }
+        .section-title { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; color: var(--text); font-size: 1rem; font-weight: 700; }
+        .form-section { margin-bottom: 32px; }
+        .required::after { content: " *"; color: var(--accent); }
+        .preview-image { max-width: 120px; max-height: 120px; border-radius: 10px; border: 2px solid var(--accent); object-fit: cover; }
+        .download-options { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .download-options .btn { padding: 10px 20px; min-width: 160px; }
+        .qr-code-container { text-align: center; margin-top: 24px; padding: 20px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+        .qr-code-container h5 { font-family: 'Syne', sans-serif; margin-bottom: 16px; }
+        .social-media-icons { font-size: 1.2rem; margin-right: 8px; vertical-align: middle; }
+        .app-logo { width: 20px; height: 20px; margin-right: 8px; vertical-align: middle; display: inline-block; }
+        .app-logo svg { width: 20px; height: 20px; }
+        .imo-logo { background: linear-gradient(135deg,#ff6b6b,#ffa726); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 1rem; }
+        .upwork-logo { color: #14a800; }
+        .scroll-btn { position: fixed; right: 20px; width: 46px; height: 46px; border: none; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; z-index: 1000; transition: all .2s; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+        .scroll-to-top { bottom: 80px; background: var(--accent); color: white; }
+        .scroll-to-bottom { bottom: 24px; background: var(--surface2); color: white; }
+        .scroll-btn:hover { transform: scale(1.1); }
+        .notification-toast { position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 280px; max-width: 400px; padding: 14px 20px; border-radius: 10px; font-size: .9rem; animation: toastIn .3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        @keyframes toastIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+        footer { background: rgba(10,10,20,0.95); border-top: 1px solid var(--border); color: var(--text-muted); padding: 20px 0; margin-top: 60px; text-align: center; font-size: .85rem; }
+        @media (max-width: 576px) { .auth-box { padding: 28px 20px; } }
+        /* Excel Import Section */
+        .excel-section { background: rgba(15,52,96,0.35); border: 1px solid rgba(245,166,35,0.25); border-radius: var(--radius); padding: 20px 22px 16px; margin-bottom: 28px; }
+        .excel-section .section-title { border-color: var(--gold); color: var(--gold); }
+        .excel-nav-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .excel-nav-bar .record-info { color: var(--text-muted); font-size: .85rem; min-width: 90px; text-align: center; padding: 6px 12px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 600; }
+        .excel-nav-bar .nav-arrow { width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; }
+        .btn-gold { background: linear-gradient(135deg,#f5a623,#e8920a); border: none; color: #1a1a2e; font-weight: 700; }
+        .btn-gold:hover { background: linear-gradient(135deg,#ffb94a,#f5a623); color: #1a1a2e; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.35); }
+        .btn-teal { background: linear-gradient(135deg,#0f9688,#0b7a6e); border: none; color: white; }
+        .btn-teal:hover { background: linear-gradient(135deg,#13b0a0,#0f9688); transform: translateY(-1px); }
+        .excel-loaded-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.4); color: #2ecc71; border-radius: 20px; padding: 4px 12px; font-size: .8rem; font-weight: 600; }
+        .vcf-all-check { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+        .vcf-all-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+        .vcf-all-check span { color: var(--text-muted); font-size: .85rem; }
+        .action-row-buttons .btn { padding: 10px 4px; font-size: .88rem; }
+    </style>
+</head>
+<body>
+    <button class="scroll-btn scroll-to-top" id="scrollToTopBtn"><i class="fas fa-arrow-up"></i></button>
+    <button class="scroll-btn scroll-to-bottom" id="scrollToBottomBtn"><i class="fas fa-arrow-down"></i></button>
+ 
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-address-book me-2"></i>Contact<span>Manager</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+ 
+                </ul>
+            </div>
+        </div>
+    </nav>
+ 
+    <!-- MAIN APP -->
+    <div class="container mt-4" id="appContainer">
+        <div class="card">
+            <div class="card-body">
+                <form id="contactForm">
+ 
+                    <!-- ═══ EXCEL IMPORT & NAVIGATION ═══ -->
+                    <div class="excel-section form-section">
+                        <h4 class="section-title"><i class="fas fa-file-excel me-2"></i>Excel Import &amp; Navigation</h4>
+                        <!-- Row 1: Download template + Upload -->
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button type="button" class="btn btn-gold btn-sm" id="downloadTemplateBtn">
+                                <i class="fas fa-download me-1"></i>Download Template
+                            </button>
+                            <label class="btn btn-teal btn-sm mb-0" style="cursor:pointer;">
+                                <i class="fas fa-upload me-1"></i>Upload Excel
+                                <input type="file" id="excelUpload" accept=".xlsx,.xls" style="display:none;">
+                            </label>
+                            <span id="excelLoadedBadge" style="display:none;" class="excel-loaded-badge">
+                                <i class="fas fa-check-circle"></i>
+                                <span id="excelLoadedText">0 records loaded</span>
+                            </span>
+                        </div>
+                        <!-- Row 2: Navigation -->
+                        <div class="excel-nav-bar mb-3" id="excelNavRow" style="display:none;">
+                            <span style="color:var(--text-muted);font-size:.85rem;font-weight:600;">Navigate:</span>
+                            <button type="button" class="btn btn-secondary btn-sm nav-arrow" id="navFirst" title="First record"><i class="fas fa-step-backward"></i></button>
+                            <button type="button" class="btn btn-secondary btn-sm nav-arrow" id="navPrev"  title="Previous"><i class="fas fa-chevron-left"></i></button>
+                            <span class="record-info" id="recordInfo">— / —</span>
+                            <button type="button" class="btn btn-secondary btn-sm nav-arrow" id="navNext"  title="Next"><i class="fas fa-chevron-right"></i></button>
+                            <button type="button" class="btn btn-secondary btn-sm nav-arrow" id="navLast"  title="Last record"><i class="fas fa-step-forward"></i></button>
+                            <button type="button" class="btn btn-primary btn-sm ms-2" id="loadRecordBtn">
+                                <i class="fas fa-arrow-circle-down me-1"></i>Load into Form
+                            </button>
+                        </div>
+                        <!-- Row 3: Batch VCF option -->
+                        <div id="excelBatchRow" style="display:none;">
+                            <label class="vcf-all-check">
+                                <input type="checkbox" id="vcfAllRecords">
+                                <span><i class="fas fa-layer-group me-1" style="color:var(--gold);"></i>Export a single VCF file containing <strong id="vcfAllCount">all</strong> records from this sheet</span>
+                            </label>
+                            <p class="mt-1 mb-0" style="color:var(--text-muted);font-size:.78rem;padding-left:24px;">
+                                <i class="fas fa-info-circle me-1" style="color:var(--accent);"></i>
+                                QR generation is available for a single record only. Load a record first, then use the button below.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ═══ ACTION ROW — 4 equal columns ═══ -->
+                    <div class="row g-2 mb-4" id="actionRow" style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px;">
+                        <div class="col-6 col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-save me-1"></i>Save Contact
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn btn-info w-100" id="downloadVcfBtn">
+                                <i class="fas fa-address-card me-1"></i>Download VCF
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="button" class="btn btn-primary w-100" id="downloadQrBtn">
+                                <i class="fas fa-qrcode me-1"></i>Generate &amp; Download QR
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button type="reset" class="btn btn-secondary w-100" id="resetFormBtn">
+                                <i class="fas fa-undo me-1"></i>Reset Form
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-4 text-center" style="color:var(--text-muted);font-size:.78rem;">
+                        <i class="fas fa-info-circle me-1" style="color:var(--accent);"></i>
+                        QR is for a single record only. VCF includes the profile image when provided.
+                    </p>
+
+                    <!-- Personal -->
+                    <div class="form-section">
+                        <h4 class="section-title">Personal Information</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label class="form-label required">Profile Image</label><input class="form-control" type="file" id="imageUpload" accept=".jpg,.jpeg,.png"></div>
+                            <div class="col-md-2 d-flex align-items-end"><img id="imagePreview" src="#" alt="Preview" class="preview-image" style="display:none;"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label class="form-label required">First Name</label><input type="text" class="form-control" id="firstName" required></div>
+                            <div class="col-md-4"><label class="form-label">Middle Name</label><input type="text" class="form-control" id="middleName"></div>
+                            <div class="col-md-4"><label class="form-label required">Last Name</label><input type="text" class="form-control" id="lastName" required></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Nickname</label><input type="text" class="form-control" id="nickName"></div>
+                            <div class="col-md-6"><label class="form-label">Birthday (dd-mm-yyyy)</label><input type="text" class="form-control" id="dob" placeholder="e.g. 25-12-1990"><div class="form-text">Format: DD-MM-YYYY</div></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Phone (Home)</label><input type="text" class="form-control" id="phoneHome"></div>
+                            <div class="col-md-6"><label class="form-label required">Phone (Mobile)</label><input type="text" class="form-control" id="phoneMobile" required></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label">Email (Personal)</label><input type="email" class="form-control" id="emailPersonal"></div>
+                        <h5 style="color:var(--text-muted);font-size:.9rem;margin-bottom:12px;">Personal Address</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Street 1</label><input type="text" class="form-control" id="street1Personal"></div>
+                            <div class="col-md-6"><label class="form-label">Street 2</label><input type="text" class="form-control" id="street2Personal"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label class="form-label">City</label><input type="text" class="form-control" id="cityPersonal"></div>
+                            <div class="col-md-4"><label class="form-label">ZIP Code</label><input type="text" class="form-control" id="zipPersonal"></div>
+                            <div class="col-md-4"><label class="form-label">Country</label><select class="form-select" id="countryPersonal"><option value="">Select Country</option></select></div>
+                        </div>
+                    </div>
+                    <!-- Work -->
+                    <div class="form-section">
+                        <h4 class="section-title">Work Information</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Company</label><input type="text" class="form-control" id="company"></div>
+                            <div class="col-md-6"><label class="form-label">Department</label><input type="text" class="form-control" id="department"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Designation</label><input type="text" class="form-control" id="designation"></div>
+                            <div class="col-md-6"><label class="form-label">Role</label><input type="text" class="form-control" id="role"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Phone (Work)</label><input type="text" class="form-control" id="phoneWork"></div>
+                            <div class="col-md-6"><label class="form-label">Email (Work)</label><input type="email" class="form-control" id="emailWork"></div>
+                        </div>
+                        <h5 style="color:var(--text-muted);font-size:.9rem;margin-bottom:12px;">Work Address</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label">Street 1</label><input type="text" class="form-control" id="street1Work"></div>
+                            <div class="col-md-6"><label class="form-label">Street 2</label><input type="text" class="form-control" id="street2Work"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><label class="form-label">City</label><input type="text" class="form-control" id="cityWork"></div>
+                            <div class="col-md-4"><label class="form-label">ZIP Code</label><input type="text" class="form-control" id="zipWork"></div>
+                            <div class="col-md-4"><label class="form-label">Country</label><select class="form-select" id="countryWork"><option value="">Select Country</option></select></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label">Web Address</label><input type="url" class="form-control" id="webAddress" placeholder="https://example.com"></div>
+                    </div>
+                    <!-- Messaging -->
+                    <div class="form-section">
+                        <h4 class="section-title">Instant Messaging</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-whatsapp social-media-icons text-success"></i>WhatsApp</label><input type="text" class="form-control" id="whatsapp"></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-whatsapp social-media-icons text-success"></i>WA Business</label><input type="text" class="form-control" id="waBusiness"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><span class="imo-logo social-media-icons">IMO</span> Imo</label><input type="text" class="form-control" id="imo"></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-viber social-media-icons" style="color:#7360f2;"></i>Viber</label><input type="text" class="form-control" id="viber"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-twitter social-media-icons text-info"></i>Twitter</label><input type="text" class="form-control" id="twitter"></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-facebook-messenger social-media-icons text-primary"></i>Messenger</label><input type="text" class="form-control" id="messenger"></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-weixin social-media-icons text-success"></i>WeChat</label><input type="text" class="form-control" id="wechat"></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-telegram social-media-icons text-info"></i>Telegram</label><input type="text" class="form-control" id="telegram"></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label"><i class="fab fa-snapchat social-media-icons text-warning"></i>Snapchat</label><input type="text" class="form-control" id="snapchat"></div>
+                    </div>
+                    <!-- Social Media -->
+                    <div class="form-section">
+                        <h4 class="section-title">Social Media</h4>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-facebook social-media-icons text-primary"></i>Facebook</label><input type="url" class="form-control" id="facebook" placeholder="https://facebook.com/..."></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-facebook social-media-icons text-primary"></i>Facebook Page</label><input type="url" class="form-control" id="facebookPage" placeholder="https://facebook.com/pages/..."></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-linkedin social-media-icons text-primary"></i>LinkedIn</label><input type="url" class="form-control" id="linkedin" placeholder="https://linkedin.com/in/..."></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-instagram social-media-icons text-danger"></i>Instagram</label><input type="url" class="form-control" id="instagram" placeholder="https://instagram.com/..."></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-youtube social-media-icons text-danger"></i>YouTube</label><input type="url" class="form-control" id="youtube" placeholder="https://youtube.com/..."></div>
+                            <div class="col-md-6"><label class="form-label"><svg class="app-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#E60023"/></svg>Pinterest</label><input type="url" class="form-control" id="pinterest" placeholder="https://pinterest.com/..."></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fas fa-search-dollar social-media-icons text-success"></i>Fiverr</label><input type="url" class="form-control" id="fiverr" placeholder="https://fiverr.com/..."></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6"><label class="form-label"><i class="fab fa-upwork upwork-logo social-media-icons"></i>Upwork</label><input type="url" class="form-control" id="upwork" placeholder="https://upwork.com/..."></div>
+                            <div class="col-md-6"><label class="form-label"><i class="fas fa-laptop-code social-media-icons text-info"></i>Freelancer</label><input type="url" class="form-control" id="freelancer" placeholder="https://freelancer.com/..."></div>
+                        </div>
+                    </div>
+                    <!-- Notes -->
+                    <div class="form-section">
+                        <h4 class="section-title">Additional Information</h4>
+                        <div class="mb-3"><label class="form-label">Notes</label><textarea class="form-control" id="notes" rows="3" maxlength="255" placeholder="Max 255 characters"></textarea><div class="form-text">Maximum 255 characters</div></div>
+                    </div>
+
+                    <div class="qr-code-container" id="qrCodeContainer" style="display:none;">
+                        <h5>QR Code Preview</h5>
+                        <div id="qrcode"></div>
+                        <p class="mt-2" style="color:var(--text-muted);font-size:.85rem;">Scan to save this contact</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+ 
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Lumen's data tech — Contact Manager. All rights reserved.</p>
+        </div>
+    </footer>
+ 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const countries=["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","East Timor","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Korea, North","Korea, South","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+ 
+    let imageBase64='';
+    let excelRecords=[];
+    let excelCursor=0;
+ 
+    const appContainer=document.getElementById('appContainer');
+    const qrCodeContainer=document.getElementById('qrCodeContainer');
+ 
+    const scrollToTopBtn=document.getElementById('scrollToTopBtn');
+    const scrollToBottomBtn=document.getElementById('scrollToBottomBtn');
+ 
+    function init(){
+        ['countryPersonal','countryWork'].forEach(id=>{const s=document.getElementById(id);countries.forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;s.appendChild(o);});});
+        document.getElementById('imageUpload').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{imageBase64=ev.target.result;const p=document.getElementById('imagePreview');p.src=imageBase64;p.style.display='block';};r.readAsDataURL(f);});
+        document.getElementById('contactForm').addEventListener('submit',e=>{e.preventDefault();showNotification(imageBase64?'Contact saved successfully!':'Contact saved (no image — VCF will not include a photo).', imageBase64?'success':'warning');});
+        document.getElementById('downloadQrBtn').addEventListener('click',generateAndDownloadQR);
+        document.getElementById('downloadVcfBtn').addEventListener('click',handleVcfDownload);
+        // Excel section
+        document.getElementById('downloadTemplateBtn').addEventListener('click',downloadExcelTemplate);
+        document.getElementById('excelUpload').addEventListener('change',handleExcelUpload);
+        document.getElementById('navFirst').addEventListener('click',()=>{excelCursor=0;updateNavUI();});
+        document.getElementById('navPrev').addEventListener('click',()=>{if(excelCursor>0){excelCursor--;updateNavUI();}});
+        document.getElementById('navNext').addEventListener('click',()=>{if(excelCursor<excelRecords.length-1){excelCursor++;updateNavUI();}});
+        document.getElementById('navLast').addEventListener('click',()=>{excelCursor=excelRecords.length-1;updateNavUI();});
+        document.getElementById('loadRecordBtn').addEventListener('click',loadRecordIntoForm);
+        document.getElementById('resetFormBtn').addEventListener('click',()=>{imageBase64='';document.getElementById('imagePreview').style.display='none';document.getElementById('imagePreview').src='#';});
+        scrollToTopBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+        scrollToBottomBtn.addEventListener('click',()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}));
+        window.addEventListener('scroll',toggleScrollBtns);
+    }
+ 
+    function getFormData(){return{firstName:document.getElementById('firstName').value,middleName:document.getElementById('middleName').value,lastName:document.getElementById('lastName').value,nickName:document.getElementById('nickName').value,dob:document.getElementById('dob').value,phoneHome:document.getElementById('phoneHome').value,phoneMobile:document.getElementById('phoneMobile').value,emailPersonal:document.getElementById('emailPersonal').value,street1Personal:document.getElementById('street1Personal').value,street2Personal:document.getElementById('street2Personal').value,cityPersonal:document.getElementById('cityPersonal').value,zipPersonal:document.getElementById('zipPersonal').value,countryPersonal:document.getElementById('countryPersonal').value,company:document.getElementById('company').value,department:document.getElementById('department').value,designation:document.getElementById('designation').value,role:document.getElementById('role').value,phoneWork:document.getElementById('phoneWork').value,emailWork:document.getElementById('emailWork').value,street1Work:document.getElementById('street1Work').value,street2Work:document.getElementById('street2Work').value,cityWork:document.getElementById('cityWork').value,zipWork:document.getElementById('zipWork').value,countryWork:document.getElementById('countryWork').value,webAddress:document.getElementById('webAddress').value,whatsapp:document.getElementById('whatsapp').value,waBusiness:document.getElementById('waBusiness').value,imo:document.getElementById('imo').value,viber:document.getElementById('viber').value,twitter:document.getElementById('twitter').value,messenger:document.getElementById('messenger').value,wechat:document.getElementById('wechat').value,telegram:document.getElementById('telegram').value,snapchat:document.getElementById('snapchat').value,facebook:document.getElementById('facebook').value,facebookPage:document.getElementById('facebookPage').value,linkedin:document.getElementById('linkedin').value,instagram:document.getElementById('instagram').value,youtube:document.getElementById('youtube').value,pinterest:document.getElementById('pinterest').value,fiverr:document.getElementById('fiverr').value,upwork:document.getElementById('upwork').value,freelancer:document.getElementById('freelancer').value,notes:document.getElementById('notes').value};}
+ 
+    // Escape special vCard 3.0 characters (RFC 6350 §3.4) so values like
+    // "Mirpur, Dhaka" or "Dhaka; Bangladesh" don't break ADR/N field parsing.
+    function escVCF(v){if(v===undefined||v===null)return'';return String(v).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r\n|\r|\n/g,'\\n');}
+
+    // Combine Street1 + Street2 into the single vCard "Street" component,
+    // joined with an escaped line-break so Street2 is preserved (not dropped).
+    function streetVCF(s1,s2){const a=(s1||'').trim(),b=(s2||'').trim();const parts=[a,b].filter(Boolean).map(escVCF);return parts.join('\\n');}
+
+    function formatDateForVCF(d){const m1=d.match(/^(\d{2})-(\d{2})-(\d{4})$/);if(m1)return`${m1[3]}${m1[2]}${m1[1]}`;const m2=d.match(/^(\d{2})-([A-Za-z]{3})$/);if(m2){const mo={JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'}[m2[2].toUpperCase()];if(mo)return`${new Date().getFullYear()}${mo}${m2[1]}`;}return d;}
+ 
+    function buildVCF(fd){let v='BEGIN:VCARD\nVERSION:3.0\n';v+=`FN:${escVCF(fd.firstName)} ${fd.middleName?escVCF(fd.middleName)+' ':''}${escVCF(fd.lastName)}\n`;v+=`N:${escVCF(fd.lastName)};${escVCF(fd.firstName)};${escVCF(fd.middleName)};;\n`;if(fd.nickName)v+=`NICKNAME:${escVCF(fd.nickName)}\n`;if(fd.dob)v+=`BDAY:${formatDateForVCF(fd.dob)}\n`;if(fd.phoneHome)v+=`TEL;TYPE=HOME,VOICE:${escVCF(fd.phoneHome)}\n`;if(fd.phoneMobile)v+=`TEL;TYPE=CELL,VOICE:${escVCF(fd.phoneMobile)}\n`;if(fd.phoneWork)v+=`TEL;TYPE=WORK,VOICE:${escVCF(fd.phoneWork)}\n`;if(fd.emailPersonal)v+=`EMAIL;TYPE=PERSONAL:${escVCF(fd.emailPersonal)}\n`;if(fd.emailWork)v+=`EMAIL;TYPE=WORK:${escVCF(fd.emailWork)}\n`;if(fd.street1Personal||fd.street2Personal||fd.cityPersonal||fd.countryPersonal)v+=`ADR;TYPE=HOME:;;${streetVCF(fd.street1Personal,fd.street2Personal)};${escVCF(fd.cityPersonal)};;${escVCF(fd.zipPersonal)};${escVCF(fd.countryPersonal)}\n`;if(fd.street1Work||fd.street2Work||fd.cityWork||fd.countryWork)v+=`ADR;TYPE=WORK:;;${streetVCF(fd.street1Work,fd.street2Work)};${escVCF(fd.cityWork)};;${escVCF(fd.zipWork)};${escVCF(fd.countryWork)}\n`;if(fd.company){v+=`ORG:${escVCF(fd.company)}`;if(fd.department)v+=`;${escVCF(fd.department)}`;v+='\n';}if(fd.designation)v+=`TITLE:${escVCF(fd.designation)}\n`;if(fd.role)v+=`ROLE:${escVCF(fd.role)}\n`;if(fd.webAddress)v+=`URL:${escVCF(fd.webAddress)}\n`;['whatsapp','waBusiness','imo','viber','twitter','messenger','wechat','telegram','snapchat','facebook','facebookPage','linkedin','instagram','youtube','pinterest','fiverr','upwork','freelancer'].forEach(s=>{if(fd[s])v+=`X-SOCIALPROFILE;TYPE=${s}:${escVCF(fd[s])}\n`;});if(fd.notes)v+=`NOTE:${escVCF(fd.notes)}\n`;if(imageBase64){const b64=imageBase64.split(',')[1];v+=`PHOTO;ENCODING=B;TYPE=JPEG:${b64}\n`;}v+="X-GENERATOR:Lumen's data tech\n";v+='END:VCARD';return v;}
+ 
+    function buildVCFForQR(fd){let v='BEGIN:VCARD\nVERSION:3.0\n';v+=`FN:${escVCF(fd.firstName)} ${fd.middleName?escVCF(fd.middleName)+' ':''}${escVCF(fd.lastName)}\n`;v+=`N:${escVCF(fd.lastName)};${escVCF(fd.firstName)};${escVCF(fd.middleName)};;\n`;if(fd.nickName)v+=`NICKNAME:${escVCF(fd.nickName)}\n`;if(fd.dob)v+=`BDAY:${formatDateForVCF(fd.dob)}\n`;if(fd.phoneHome)v+=`TEL;TYPE=HOME,VOICE:${escVCF(fd.phoneHome)}\n`;if(fd.phoneMobile)v+=`TEL;TYPE=CELL,VOICE:${escVCF(fd.phoneMobile)}\n`;if(fd.phoneWork)v+=`TEL;TYPE=WORK,VOICE:${escVCF(fd.phoneWork)}\n`;if(fd.emailPersonal)v+=`EMAIL;TYPE=PERSONAL:${escVCF(fd.emailPersonal)}\n`;if(fd.emailWork)v+=`EMAIL;TYPE=WORK:${escVCF(fd.emailWork)}\n`;if(fd.street1Personal||fd.street2Personal||fd.cityPersonal||fd.countryPersonal)v+=`ADR;TYPE=HOME:;;${streetVCF(fd.street1Personal,fd.street2Personal)};${escVCF(fd.cityPersonal)};;${escVCF(fd.zipPersonal)};${escVCF(fd.countryPersonal)}\n`;if(fd.street1Work||fd.street2Work||fd.cityWork||fd.countryWork)v+=`ADR;TYPE=WORK:;;${streetVCF(fd.street1Work,fd.street2Work)};${escVCF(fd.cityWork)};;${escVCF(fd.zipWork)};${escVCF(fd.countryWork)}\n`;if(fd.company){v+=`ORG:${escVCF(fd.company)}`;if(fd.department)v+=`;${escVCF(fd.department)}`;v+='\n';}if(fd.designation)v+=`TITLE:${escVCF(fd.designation)}\n`;if(fd.role)v+=`ROLE:${escVCF(fd.role)}\n`;if(fd.webAddress)v+=`URL:${escVCF(fd.webAddress)}\n`;['whatsapp','waBusiness','imo','viber','twitter','messenger','wechat','telegram','snapchat','facebook','facebookPage','linkedin','instagram','youtube','pinterest','fiverr','upwork','freelancer'].forEach(s=>{if(fd[s])v+=`X-SOCIALPROFILE;TYPE=${s}:${escVCF(fd[s])}\n`;});if(fd.notes)v+=`NOTE:${escVCF(fd.notes)}\n`;v+="X-GENERATOR:Lumen's data tech\n";v+='END:VCARD';return v;}
+ 
+    function downloadVCF(){const fd=getFormData();if(!imageBase64)showNotification('No profile image — VCF downloaded without photo.','warning');const vcf=buildVCFFromData(fd,imageBase64||null);triggerDownload(new Blob([vcf],{type:'text/vcard'}),`${fd.firstName||'contact'}_${fd.lastName||''}.vcf`);if(imageBase64)showNotification('VCF downloaded (with photo).','success');}
+ 
+    function generateAndDownloadQR(){
+        const vcfAllCb=document.getElementById('vcfAllRecords');
+        if(vcfAllCb&&vcfAllCb.checked){showNotification('QR is only available for a single record. Uncheck "Export all records" first.','warning');return;}
+        const fd=getFormData();const payload=buildVCFForQR(fd);
+        let qr=null;
+        for(let t=1;t<=40;t++){try{const a=qrcode(t,'L');a.addData(payload,'Byte');a.make();qr=a;break;}catch(e){}}
+        if(!qr){showNotification('Data too large for QR. Shorten some fields.','error');return;}
+        const cell=10,margin=40,mc=qr.getModuleCount(),sz=mc*cell+margin*2+30;
+        const canvas=document.createElement('canvas');canvas.width=sz;canvas.height=sz;
+        const ctx=canvas.getContext('2d');
+        ctx.fillStyle='#ffffff';ctx.fillRect(0,0,sz,sz);
+        ctx.fillStyle='#000000';
+        for(let r=0;r<mc;r++)for(let c=0;c<mc;c++)if(qr.isDark(r,c))ctx.fillRect(margin+c*cell,margin+r*cell,cell,cell);
+        const brand="Lumen's data tech",fs=Math.max(14,Math.round(cell*1.8));
+        ctx.font=`bold ${fs}px Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+        const tw=ctx.measureText(brand).width,ph=fs+10,pw=tw+28,px=sz/2-pw/2,py=sz-margin/2-ph/2;
+        ctx.fillStyle='#000000';ctx.beginPath();ctx.roundRect(px,py,pw,ph,ph/2);ctx.fill();
+        ctx.fillStyle='#ffffff';ctx.fillText(brand,sz/2,py+ph/2);
+        const pi=new Image();pi.src=canvas.toDataURL('image/png');pi.style.cssText='max-width:100%;border:6px solid white;border-radius:8px;';
+        const qd=document.getElementById('qrcode');qd.innerHTML='';qd.appendChild(pi);qrCodeContainer.style.display='block';
+        const fname=`${fd.firstName||'contact'}_${fd.lastName||''}_QR.png`;
+        canvas.toBlob(blob=>{if(!blob){showNotification('Failed to create QR.','error');return;}triggerDownload(blob,fname);showNotification('QR generated & downloaded!','success');},'image/png',1.0);
+    }
+ 
+    function triggerDownload(blob,filename){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),1000);}
+    function toggleScrollBtns(){scrollToTopBtn.style.display=window.scrollY>300?'flex':'none';scrollToBottomBtn.style.display=(window.innerHeight+window.scrollY)<document.body.offsetHeight-300?'flex':'none';}
+    function showNotification(msg,type){document.querySelectorAll('.notification-toast').forEach(n=>n.remove());const colors={success:'#2ecc71',error:'#e74c3c',warning:'#f39c12',info:'#3498db'};const div=document.createElement('div');div.className='notification-toast';div.style.cssText=`background:${colors[type]||colors.info};color:white;`;div.innerHTML=`<i class="fas fa-${type==='error'?'times-circle':type==='warning'?'exclamation-triangle':'check-circle'} me-2"></i>${msg}`;document.body.appendChild(div);setTimeout(()=>{if(div.parentNode)div.parentNode.removeChild(div);},5000);}
+ 
+    // ─── Excel template column headers ───────────────────────────────────────
+    const EXCEL_COLS=['firstName','middleName','lastName','nickName','dob','phoneHome','phoneMobile',
+        'emailPersonal','street1Personal','street2Personal','cityPersonal','zipPersonal','countryPersonal',
+        'company','department','designation','role','phoneWork','emailWork',
+        'street1Work','street2Work','cityWork','zipWork','countryWork',
+        'webAddress','whatsapp','waBusiness','imo','viber','twitter','messenger','wechat',
+        'telegram','snapchat','facebook','facebookPage','linkedin','instagram',
+        'youtube','pinterest','fiverr','upwork','freelancer','notes'];
+ 
+    function downloadExcelTemplate(){
+        const wb=XLSX.utils.book_new();
+        const ws=XLSX.utils.aoa_to_sheet([EXCEL_COLS]);
+        // Style header row width hints
+        ws['!cols']=EXCEL_COLS.map(()=>({wch:20}));
+        XLSX.utils.book_append_sheet(wb,ws,'Contacts');
+        XLSX.writeFile(wb,'contact_manager_template.xlsx');
+        showNotification('Template downloaded!','success');
+    }
+ 
+    function handleExcelUpload(e){
+        const file=e.target.files[0]; if(!file)return;
+        const reader=new FileReader();
+        reader.onload=ev=>{
+            try{
+                const wb=XLSX.read(ev.target.result,{type:'binary'});
+                const ws=wb.Sheets[wb.SheetNames[0]];
+                const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+                if(!rows.length){showNotification('No data rows found in file.','warning');return;}
+                excelRecords=rows;
+                excelCursor=0;
+                updateNavUI();
+                document.getElementById('excelLoadedBadge').style.display='inline-flex';
+                document.getElementById('excelLoadedText').textContent=`${rows.length} record${rows.length>1?'s':''} loaded`;
+                document.getElementById('excelNavRow').style.display='flex';
+                document.getElementById('excelBatchRow').style.display='block';
+                document.getElementById('vcfAllCount').textContent=rows.length;
+                showNotification(`${rows.length} record${rows.length>1?'s':''} imported successfully.`,'success');
+            }catch(err){showNotification('Failed to read Excel file.','error');console.error(err);}
+        };
+        reader.readAsBinaryString(file);
+        e.target.value=''; // reset so same file can be re-uploaded
+    }
+ 
+    function updateNavUI(){
+        const total=excelRecords.length;
+        document.getElementById('recordInfo').textContent=total?`${excelCursor+1} / ${total}`:'— / —';
+        document.getElementById('navFirst').disabled=excelCursor===0;
+        document.getElementById('navPrev').disabled=excelCursor===0;
+        document.getElementById('navNext').disabled=excelCursor>=total-1;
+        document.getElementById('navLast').disabled=excelCursor>=total-1;
+    }
+ 
+    function excelDateToDDMMYYYY(val){
+        if(!val&&val!==0)return'';
+        // Excel serial number (e.g. 44927)
+        if(typeof val==='number'){
+            const epoch=new Date(Date.UTC(1899,11,30));
+            epoch.setUTCDate(epoch.getUTCDate()+Math.floor(val));
+            const d=String(epoch.getUTCDate()).padStart(2,'0');
+            const m=String(epoch.getUTCMonth()+1).padStart(2,'0');
+            const y=epoch.getUTCFullYear();
+            return`${d}-${m}-${y}`;
+        }
+        const s=String(val).trim();
+        // Already DD-MM-YYYY
+        if(/^\d{2}-\d{2}-\d{4}$/.test(s))return s;
+        // YYYY-MM-DD  (ISO)
+        const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if(iso)return`${iso[3]}-${iso[2]}-${iso[1]}`;
+        // MM/DD/YYYY or DD/MM/YYYY — try to parse via Date
+        const slash=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if(slash){const d=new Date(s);if(!isNaN(d)){return`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;};}
+        return s; // return as-is if unrecognised
+    }
+
+    function loadRecordIntoForm(){
+        if(!excelRecords.length){showNotification('No records loaded. Upload an Excel file first.','warning');return;}
+        const rec=excelRecords[excelCursor];
+        EXCEL_COLS.forEach(col=>{
+            const el=document.getElementById(col);
+            if(!el)return;
+            if(col==='dob'){
+                el.value=excelDateToDDMMYYYY(rec[col]);
+            }else{
+                el.value=rec[col]||'';
+            }
+        });
+        imageBase64='';
+        document.getElementById('imagePreview').style.display='none';
+        document.getElementById('imagePreview').src='#';
+        showNotification(`Record ${excelCursor+1} loaded into form.`,'info');
+    }
+ 
+    function handleVcfDownload(){
+        if(document.getElementById('vcfAllRecords')&&document.getElementById('vcfAllRecords').checked&&excelRecords.length>0){
+            downloadAllVCF();
+        }else{
+            downloadVCF();
+        }
+    }
+ 
+    function downloadAllVCF(){
+        const allVCF=excelRecords.map(rec=>{
+            const fd={};
+            EXCEL_COLS.forEach(col=>{fd[col]=rec[col]||'';});
+            return buildVCFFromData(fd,null);
+        }).join('\n');
+        const filename=`contacts_all_${excelRecords.length}.vcf`;
+        triggerDownload(new Blob([allVCF],{type:'text/vcard'}),filename);
+        showNotification(`VCF with ${excelRecords.length} contacts downloaded.`,'success');
+    }
+ 
+    function buildVCFFromData(fd,img){
+        let v='BEGIN:VCARD\nVERSION:3.0\n';
+        v+=`FN:${escVCF(fd.firstName)} ${fd.middleName?escVCF(fd.middleName)+' ':''}${escVCF(fd.lastName)}\n`;
+        v+=`N:${escVCF(fd.lastName)};${escVCF(fd.firstName)};${escVCF(fd.middleName)};;\n`;
+        if(fd.nickName)v+=`NICKNAME:${escVCF(fd.nickName)}\n`;
+        if(fd.dob)v+=`BDAY:${formatDateForVCF(fd.dob)}\n`;
+        if(fd.phoneHome)v+=`TEL;TYPE=HOME,VOICE:${escVCF(fd.phoneHome)}\n`;
+        if(fd.phoneMobile)v+=`TEL;TYPE=CELL,VOICE:${escVCF(fd.phoneMobile)}\n`;
+        if(fd.phoneWork)v+=`TEL;TYPE=WORK,VOICE:${escVCF(fd.phoneWork)}\n`;
+        if(fd.emailPersonal)v+=`EMAIL;TYPE=PERSONAL:${escVCF(fd.emailPersonal)}\n`;
+        if(fd.emailWork)v+=`EMAIL;TYPE=WORK:${escVCF(fd.emailWork)}\n`;
+        if(fd.street1Personal||fd.street2Personal||fd.cityPersonal||fd.countryPersonal)v+=`ADR;TYPE=HOME:;;${streetVCF(fd.street1Personal,fd.street2Personal)};${escVCF(fd.cityPersonal)};;${escVCF(fd.zipPersonal)};${escVCF(fd.countryPersonal)}\n`;
+        if(fd.street1Work||fd.street2Work||fd.cityWork||fd.countryWork)v+=`ADR;TYPE=WORK:;;${streetVCF(fd.street1Work,fd.street2Work)};${escVCF(fd.cityWork)};;${escVCF(fd.zipWork)};${escVCF(fd.countryWork)}\n`;
+        if(fd.company){v+=`ORG:${escVCF(fd.company)}`;if(fd.department)v+=`;${escVCF(fd.department)}`;v+='\n';}
+        if(fd.designation)v+=`TITLE:${escVCF(fd.designation)}\n`;
+        if(fd.role)v+=`ROLE:${escVCF(fd.role)}\n`;
+        if(fd.webAddress)v+=`URL:${escVCF(fd.webAddress)}\n`;
+        ['whatsapp','waBusiness','imo','viber','twitter','messenger','wechat','telegram','snapchat','facebook','facebookPage','linkedin','instagram','youtube','pinterest','fiverr','upwork','freelancer'].forEach(s=>{if(fd[s])v+=`X-SOCIALPROFILE;TYPE=${s}:${escVCF(fd[s])}\n`;});
+        if(fd.notes)v+=`NOTE:${escVCF(fd.notes)}\n`;
+        if(img){const b64=img.split(',')[1];v+=`PHOTO;ENCODING=B;TYPE=JPEG:${b64}\n`;}
+        v+="X-GENERATOR:Lumen's data tech\n";
+        v+='END:VCARD';
+        return v;
+    }
+ 
+    document.addEventListener('DOMContentLoaded',init);
+    </script>
+</body>
+</html>
+ 
